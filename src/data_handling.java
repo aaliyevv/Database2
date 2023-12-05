@@ -24,6 +24,9 @@ public class data_handling {
                     case "2":
                         retrieve(conn);
                         break;
+                    case "3":
+                        update(scanner, conn);
+                        break;
 
                 }
             }
@@ -153,4 +156,27 @@ public class data_handling {
             }
         }
     }
+
+
+    private static void update(Scanner scanner, Connection conn) throws SQLException {
+        System.out.print("Enter the Book ID to update: ");
+        int bookId = Integer.parseInt(scanner.nextLine());
+        System.out.print("Enter new title (press enter to skip): ");
+        String newTitle = scanner.nextLine();
+        System.out.print("Enter new stock (0 for no change): ");
+        int newStock = Integer.parseInt(scanner.nextLine());
+
+        String sql = "UPDATE Books SET title = COALESCE(NULLIF(?, ''), title), " +
+                "stock = COALESCE(NULLIF(?, 0), stock) WHERE book_id = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, newTitle);
+            pstmt.setInt(2, newStock);
+            pstmt.setInt(3, bookId);
+            int rowsAffected = pstmt.executeUpdate();
+            System.out.println(rowsAffected + " book(s) updated.");
+        }
+    }
+
+
 }
