@@ -27,7 +27,13 @@ public class data_handling {
                     case "3":
                         update(scanner, conn);
                         break;
-
+                    case "4":
+                        delete(scanner, conn);
+                        break;
+                    case "5":
+                        System.out.print("Enter the name of the table to view its metadata: ");
+                        String tableName = scanner.nextLine();
+                        showMetaData(conn, tableName);
                 }
             }
         } catch (SQLException e) {
@@ -178,5 +184,82 @@ public class data_handling {
         }
     }
 
+
+    private static void delete(Scanner scanner, Connection conn) throws SQLException {
+        System.out.print("Enter the Book ID to delete: ");
+        int bookId = Integer.parseInt(scanner.nextLine());
+
+        String sql = "DELETE FROM Books WHERE book_id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, bookId);
+            int rowsAffected = pstmt.executeUpdate();
+            System.out.println(rowsAffected + " book(s) deleted.");
+        }
+    }
+
+
+    private static void showMetaData(Connection conn, String tableName) {
+        try {
+            displayTableNamesAndStructures(conn);
+            displayColumnDetails(conn, tableName);
+            displayPrimaryKeyInfo(conn, tableName);
+            displayForeignKeyInfo(conn, tableName);
+        } catch (SQLException e) {
+            System.out.println("Error retrieving metadata for table: " + tableName);
+            e.printStackTrace();
+        }
+    }
+
+    private static void displayTableNamesAndStructures(Connection conn) throws SQLException {
+        DatabaseMetaData metaData = conn.getMetaData();
+        try (ResultSet tables = metaData.getTables(null, null, "%", new String[]{"TABLE"})) {
+            while (tables.next()) {
+                System.out.println("Table: " + tables.getString("TABLE_NAME") + ", Type: " + tables.getString("TABLE_TYPE"));
+            }
+        }
+    }
+
+    private static void displayColumnDetails(Connection conn, String tableName) throws SQLException {
+        DatabaseMetaData metaData = conn.getMetaData();
+
+        System.out.println("Column details for table: " + tableName);
+        try (ResultSet columns = metaData.getColumns(null, null, tableName, null)) {
+            while (columns.next()) {
+                System.out.println("Column Name: " + columns.getString("COLUMN_NAME") +
+                        ", Type: " + columns.getString("TYPE_NAME") +
+                        ", Size: " + columns.getInt("COLUMN_SIZE"));
+            }
+        }
+    }
+
+
+    private static void displayPrimaryKeyInfo(Connection conn, String tableName) throws SQLException {
+        DatabaseMetaData metaData = conn.getMetaData();
+
+        System.out.println("Primary Key for table: " + tableName);
+
+        try (ResultSet pKeys = metaData.getPrimaryKeys(null, null, tableName)) {
+            while (pKeys.next()) {
+                System.out.println("Column Name: " + pKeys.getString("COLUMN_NAME") +
+                        ", PK Name: " + pKeys.getString("PK_NAME"));
+            }
+        }
+    }
+
+
+    private static void displayForeignKeyInfo(Connection conn, String tableName) throws SQLException {
+        DatabaseMetaData metaData = conn.getMetaData();
+
+        System.out.println("Foreign Keys for table: " + tableName);
+
+        try (ResultSet fKeys = metaData.getImportedKeys(null, null, tableName)) {
+            while (fKeys.next()) {
+                System.out.println("FK Name: " + fKeys.getString("FK_NAME") +
+                        ", FK Column: " + fKeys.getString("FKCOLUMN_NAME") +
+                        ", PK Table: " + fKeys.getString("PKTABLE_NAME") +
+                        ", PK Column: " + fKeys.getString("PKCOLUMN_NAME"));
+            }
+        }
+    }
 
 }
